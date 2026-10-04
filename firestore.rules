@@ -1,0 +1,88 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isRealAdmin() {
+      return isSignedIn() && 
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) &&
+        request.auth.token.get('demo', false) != true &&
+        request.auth.uid != 'demo-staff';
+    }
+
+    function isDemoStaff() {
+      return isSignedIn() && (
+        (request.auth.token.get('role', '') == 'staff' && request.auth.token.get('demo', false) == true) ||
+        request.auth.uid == 'demo-staff'
+      );
+    }
+
+    function isDemoUser() {
+      return isSignedIn() && (
+        request.auth.token.get('demo', false) == true ||
+        request.auth.uid.matches('^demo-.*')
+      );
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Admins collection: Real staff only, completely blocked for demo users
+    match /admins/{adminId} {
+      allow read: if isRealAdmin();
+      allow write: if isRealAdmin();
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isRealAdmin();
+      allow create: if isOwner(userId) && request.resource.data.role == 'applicant';
+      allow update: if (isOwner(userId) && request.resource.data.role == resource.data.role) || isRealAdmin();
+      allow delete: if isRealAdmin();
+    }
+
+    // Applications collection:
+    // Real staff can access all. Demo staff can access only isDemo == true records.
+    // Demo applicant can access only their own application.
+    match /applications/{applicationId} {
+      allow read, list: if isSignedIn() && (
+        (resource.data.userId == request.auth.uid) ||
+        isRealAdmin() ||
+        (isDemoStaff() && resource.data.isDemo == true)
+      );
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && (
+        (resource.data.userId == request.auth.uid) ||
+        isRealAdmin() ||
+        (isDemoStaff() && resource.data.isDemo == true)
+      );
+      allow delete: if isRealAdmin();
+    }
+
+    // Notifications collection
+    match /notifications/{notificationId} {
+      allow read, list: if isSignedIn() && (
+        (resource.data.userId == request.auth.uid) ||
+        isRealAdmin() ||
+        (isDemoStaff() && resource.data.isDemo == true)
+      );
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (
+        (resource.data.userId == request.auth.uid) ||
+        isRealAdmin() ||
+        (isDemoStaff() && resource.data.isDemo == true)
+      );
+      allow delete: if isRealAdmin();
+    }
+  }
+}
+

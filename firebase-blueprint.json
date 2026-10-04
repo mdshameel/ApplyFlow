@@ -1,0 +1,98 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Registered user profile with server-assigned role",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["applicant", "staff"] },
+        "displayName": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "email", "role"]
+    },
+    "Application": {
+      "title": "Application",
+      "description": "Scholarship application with submitted data, document details, and evaluation status",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "applicantEmail": { "type": "string" },
+        "applicantName": { "type": "string" },
+        "phone": { "type": "string" },
+        "dateOfBirth": { "type": "string" },
+        "course": { "type": "string" },
+        "marksPercentage": { "type": "number" },
+        "annualFamilyIncome": { "type": "number" },
+        "status": {
+          "type": "string",
+          "enum": ["Draft", "Processing", "Needs correction", "Needs review", "Approved", "Rejected"]
+        },
+        "isDraft": { "type": "boolean" },
+        "documents": { "type": "object" },
+        "comparisonResults": { "type": "object" },
+        "problems": { "type": "array" },
+        "summary": { "type": "string" },
+        "staffNote": { "type": "string" },
+        "statusHistory": { "type": "array" },
+        "isDemo": { "type": "boolean" },
+        "submittedAt": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "userId", "applicantEmail", "status"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "System or staff notifications dispatched to applicants",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "applicationId": { "type": "string" },
+        "recipientEmail": { "type": "string" },
+        "type": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "emailStatus": { "type": "string", "enum": ["sent", "failed"] },
+        "emailError": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "read": { "type": "boolean" }
+      },
+      "required": ["id", "userId", "recipientEmail", "type"]
+    },
+    "Admin": {
+      "title": "Admin",
+      "description": "Approved staff member records granting backend and rule-level staff permissions",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "email": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "email"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User accounts. Applicants can read/write their own info (excluding role); staff can read."
+    },
+    "/applications/{applicationId}": {
+      "schema": "Application",
+      "description": "Scholarship applications. Applicants manage their own application; staff can read all and update decisions."
+    },
+    "/notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "Applicant notifications. Applicants read their own notifications; staff and system create them."
+    },
+    "/admins/{adminId}": {
+      "schema": "Admin",
+      "description": "Staff access tokens. Only readable by admins or system."
+    }
+  }
+}

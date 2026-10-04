@@ -1,0 +1,8 @@
+{
+  "name": "ApplyFlow",
+  "description": "Scholarship application processing platform with document verification, rule-based matching, and staff review portal.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
